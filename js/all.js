@@ -2,6 +2,7 @@
 const productList = document.querySelector('.productWrap')
 const productSelect = document.querySelector('.productSelect')
 const cartList = document.querySelector('.shoppingCart-tableList')
+const discardAllBtn = document.querySelector('.discardAllBtn')
 
 const init = () => {
   getProjectList()
@@ -48,7 +49,7 @@ const changeSelectProduct = (e) => {
 // 取得產品清單列表
 const getProjectList = async() => {
   try {
-    const res = await apiGetProjectList()
+    const res = await apiGetProductList()
     productData = res.data.products
     renderProductList(productData)
   } catch (error) {
@@ -73,7 +74,7 @@ const productCartInfo = (item) => {
     <td>${item.quantity}</td>
     <td>NT$${separator(item.product.price * item.quantity)}</td>
     <td class="discardBtn">
-      <a href="#" class="material-icons" data-id="${item.id}">
+      <a href="#" class="material-icons deleteBtn" data-id="${item.id}">
         clear
       </a>
     </td>
@@ -83,14 +84,6 @@ const productCartInfo = (item) => {
 // 購物車產品清單
 const renderCartList = () => {
   cartList.innerHTML = cartData.map(item => productCartInfo(item)).join('')
-}
-// 加入購物車
-const addProductCart = (e) => {
-  e.preventDefault()
-  const addCardBtn = e.target.closest('.addCardBtn')
-  if (!addCardBtn) return
-  
-  const productId = e.target.getAttribute('data-id')
 }
 // 取得購物車列表
 const getCartList = async() => {
@@ -102,6 +95,68 @@ const getCartList = async() => {
     console.log('取得購物車列表失敗', error)
   }
 }
-productList.addEventListener('click', (e) => addProductCart(e))
+// 加入購物車產品
+const addProductCart = async(e) => {
+  try {
+    e.preventDefault()
+    const addCardBtn = e.target.closest('.addCardBtn')
+    if (!addCardBtn) return
+    
+    const productId = e.target.getAttribute('data-id')
+    let quantity = 1
+    cartData.forEach(item => {
+      if (item.product.id == productId) {
+        quantity = item.quantity += 1
+      }
+    })
+    
+    const res = await apiAddOneProduct({ data: {productId, quantity} })
+    if (!res.data.status) return
+    alert('加入購物車成功')
+    getCartList()
+  } catch (error) {
+    console.log('加入購物車失敗', error)
+    alert('加入購物車失敗，請稍後再試')
+  }
+}
+// 刪除購物車產品
+const deleteOneProductCart = async(e) => {
+  try {
+    e.preventDefault()
+    const deleteBtn = e.target.closest('.deleteBtn')
+    if (!deleteBtn) return
 
+    const productId = e.target.getAttribute('data-id')
+    const res = await apideleteOneProduct(productId)
+
+    if (!res.data.status) return
+    alert('刪除一筆購物車產品成功')
+    getCartList()
+    cartList.innerHTML = `
+    <tr>
+      <td>目前無產品資料</td>
+    </tr>
+    `
+  } catch (error) {
+    console.log('刪除一筆購物車產品失敗', error)
+    alert('刪除一筆購物車產品失敗，請稍後再試')
+  }
+}
+// 刪除全部購物車產品
+const deleteAllProductCart = async() => {
+  try {
+    e.preventDefault()
+    const res = await apideleteAllProduct()
+
+    if (!res.data.status) return
+    alert('刪除全部購物車產品成功')
+    getCartList()
+  } catch (error) {
+    console.log('刪除全部購物車產品失敗', error)
+    alert('刪除全部購物車產品失敗，請稍後再試')
+  }
+}
+productList.addEventListener('click', (e) => addProductCart(e))
+cartList.addEventListener('click', (e) => deleteOneProductCart(e))
+discardAllBtn.addEventListener('click', (e) => deleteAllProductCart(e))
 init()
