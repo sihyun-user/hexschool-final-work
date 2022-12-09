@@ -3,17 +3,30 @@ const productList = document.querySelector('.productWrap')
 const productSelect = document.querySelector('.productSelect')
 const cartList = document.querySelector('.shoppingCart-tableList')
 const discardAllBtn = document.querySelector('.discardAllBtn')
+const totalPrice = document.querySelector('.js-total')
+const orderInfoBtn = document.querySelector(".orderInfo-btn")
 
 const init = () => {
   getProjectList()
   getCartList()
 }
 
+// utils
 // 數字逗號分隔
 const separator = (num) => {
   let str = num.toString().split('.')
   str[0] = str[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   return str.join('.')
+}
+// 驗證E-mail
+const validateEmail = (mail) => {
+  if (/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(mail)) return true
+  return false
+}
+// 驗證Phone
+const validatePhone = (phone) => {
+  if (/^[09]{2}\d{8}$/.test(phone)) return true
+  return false
 }
 
 // ---------- 產品列表 ---------- //
@@ -90,6 +103,7 @@ const getCartList = async() => {
   try {
     const res = await apiGetCartList()
     cartData = res.data.carts
+    totalPrice.textContent = res.data.finalTotal
     renderCartList()
   } catch (error) {
     console.log('取得購物車列表失敗', error)
@@ -110,7 +124,7 @@ const addProductCart = async(e) => {
       }
     })
     
-    const res = await apiAddOneProduct({ data: {productId, quantity} })
+    const res = await apiAddOneProduct({ data: { productId, quantity } })
     if (!res.data.status) return
     alert('加入購物車成功')
     getCartList()
@@ -143,7 +157,7 @@ const deleteOneProductCart = async(e) => {
   }
 }
 // 刪除全部購物車產品
-const deleteAllProductCart = async() => {
+const deleteAllProductCart = async(e) => {
   try {
     e.preventDefault()
     const res = await apideleteAllProduct()
@@ -159,4 +173,71 @@ const deleteAllProductCart = async() => {
 productList.addEventListener('click', (e) => addProductCart(e))
 cartList.addEventListener('click', (e) => deleteOneProductCart(e))
 discardAllBtn.addEventListener('click', (e) => deleteAllProductCart(e))
+
+// ---------- 訂單 ---------- //
+const customerName = document.querySelector("#customerName")
+const customerPhone = document.querySelector("#customerPhone")
+const customerEmail = document.querySelector("#customerEmail")
+const customerAddress = document.querySelector("#customerAddress")
+const customerTradeWay = document.querySelector("#tradeWay")
+// 送出訂單
+const submitOrder = async(e) => {
+  try {
+    e.preventDefault()
+    if (cartData.length == 0) {
+      return alert('請加入購物車產品')
+    }
+
+    const validate = validateOrder()
+    if (!validate) return
+
+    const paramData = {
+      data: {
+        user: {
+          name: customerName.value,
+          tel: customerPhone.value,
+          email: customerEmail.value,
+          address: customerAddress.value,
+          payment: customerTradeWay.value
+        }
+      }
+    }
+
+    const res = await apiSubmitOrder(paramData)
+    if (!res.data.status) return 
+    alert('訂單已送出成功!')
+    clearOrder()
+  } catch (error) {
+    
+  }
+}
+// 驗證訂單資料
+const validateOrder = () => {
+  if (customerName.value == '' || customerPhone.value == '' || customerEmail.value == '' || 
+  customerAddress.value == '' || customerTradeWay.value == '') {
+    alert('訂單資料請勿輸入空值')
+    return false
+  }
+  if (!validatePhone(customerPhone.value)){
+    alert('請填寫正確的電話')
+    return false
+  }
+  if (!validateEmail(customerEmail.value)){
+    alert('請填寫正確的E-mai')
+    return false
+  }
+
+  return true
+}
+// 清除訂單資料
+const clearOrder = () => {
+  customerName.value = '' 
+  customerPhone.value = '' 
+  customerEmail.value = '' 
+  customerAddress.value = ''
+  customerTradeWay.value = 'ATM'
+}
+
+orderInfoBtn.addEventListener('click', (e) => submitOrder(e))
+
 init()

@@ -12,3 +12,5 @@ const apiAddOneProduct = payload => baseRequest.post(`/customer/${API_PATH}/cart
 const apideleteOneProduct = productId => baseRequest.delete(`/customer/${API_PATH}/carts/${productId}`)
 // 刪除全部購物車產品 API
 const apideleteAllProduct = () => baseRequest.delete(`/customer/${API_PATH}/carts`)
+// 送出訂單 API
+const apiSubmitOrder = payload => baseRequest.post(`/customer/${API_PATH}/orders`, payload)
