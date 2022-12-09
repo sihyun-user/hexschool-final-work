@@ -208,7 +208,8 @@ const submitOrder = async(e) => {
     alert('訂單已送出成功!')
     clearOrder()
   } catch (error) {
-    
+    console.log('訂單送出失敗', error)
+    alert('訂單送出失敗，請稍後嘗試')
   }
 }
 // 驗證訂單資料
